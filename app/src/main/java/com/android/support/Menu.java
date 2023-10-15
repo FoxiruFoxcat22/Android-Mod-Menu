@@ -13,6 +13,7 @@ import android.content.res.ColorStateList;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -27,6 +28,7 @@ import android.text.method.DigitsKeyListener;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -52,6 +54,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.Display;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -99,6 +102,7 @@ public class Menu {
     LinearLayout mExpanded, mods, mSettings, mCollapse;
     LinearLayout.LayoutParams scrlLLExpanded, scrlLL;
     WindowManager mWindowManager;
+    WindowManager mWindowManager2;
     WindowManager.LayoutParams vmParams;
     ImageView startimage;
     FrameLayout rootFrame;
@@ -125,6 +129,7 @@ public class Menu {
 
         getContext = context;
         Preferences.context = context;
+        mWindowManager2 = (WindowManager) context.getSystemService(context.WINDOW_SERVICE);
         rootFrame = new FrameLayout(context); // Global markup
         rootFrame.setOnTouchListener(onTouchListener());
         mRootContainer = new RelativeLayout(context); // Markup on which two markups of the icon and the menu itself will be placed
@@ -355,7 +360,7 @@ public class Menu {
         vmParams.gravity = 51;
         vmParams.x = POS_X;
         vmParams.y = POS_Y;
-
+        
         mWindowManager = (WindowManager) getContext.getSystemService(getContext.WINDOW_SERVICE);
         mWindowManager.addView(rootFrame, vmParams);
 
@@ -379,7 +384,7 @@ public class Menu {
         vmParams.gravity = 51;
         vmParams.x = POS_X;
         vmParams.y = POS_Y;
-
+        
         mWindowManager = ((Activity) getContext).getWindowManager();
         mWindowManager.addView(rootFrame, vmParams);
     }
@@ -424,6 +429,13 @@ public class Menu {
                         //Calculate the X and Y coordinates of the view.
                         vmParams.x = initialX + ((int) (motionEvent.getRawX() - initialTouchX));
                         vmParams.y = initialY + ((int) (motionEvent.getRawY() - initialTouchY));
+
+                        //Fixed menu when you try to drag at any sides of a screen then it offsets it.                     
+                        if (vmParams.x <= 0 || vmParams.x >= getWidth() - MENU_WIDTH)
+							vmParams.x = Math.max(0, Math.min(vmParams.x, getWidth() - MENU_WIDTH));
+						if (vmParams.y <= 0 || vmParams.y >= getHeight() - MENU_HEIGHT)
+							vmParams.y = Math.max(0, Math.min(vmParams.y, getHeight() - MENU_HEIGHT));
+                        
                         //Update the layout with new X & Y coordinate
                         mWindowManager.updateViewLayout(rootFrame, vmParams);
                         return true;
@@ -1029,6 +1041,24 @@ public class Menu {
         wView.setPadding(0, 5, 0, 5);
         wView.getSettings().setAppCacheEnabled(false);
         linLayout.addView(wView);
+    }
+
+
+    // Get Width and Height of a Screen
+    private int getWidth() {
+	  Display display = mWindowManager2.getDefaultDisplay();
+		Point point = new Point();
+		display.getSize(point);
+		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ?
+			point.x : display.getWidth();
+	}
+
+	private int getHeight() {
+		Display display = mWindowManager2.getDefaultDisplay();
+		Point point = new Point();
+		display.getSize(point);
+		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ?
+			point.y : display.getHeight();
     }
 
     private boolean isViewCollapsed() {
